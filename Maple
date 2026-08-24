@@ -1,0 +1,55 @@
+# ScheduleAI
+
+A starter app where you type a natural-language request like:
+
+> Dentist tomorrow at 3pm for 1 hour
+
+and the app previews it and can add it directly to Google Calendar.
+
+## What works
+- Natural-language event parsing
+- Google OAuth sign-in
+- Creates events on the user's primary Google Calendar
+- Preview before scheduling
+- Mobile-friendly UI
+
+## 1) Install Python
+Use Python 3.10+.
+
+## 2) Install dependencies
+```bash
+pip install -r requirements.txt
+```
+
+## 3) Create Google Calendar OAuth credentials
+1. Open Google Cloud Console.
+2. Create a project.
+3. Enable the Google Calendar API.
+4. Configure the OAuth consent screen.
+5. Create an OAuth Client ID for a Web application.
+6. Add this redirect URI:
+   `http://localhost:5000/oauth2callback`
+7. Download the OAuth file and save it in this folder as:
+   `client_secret.json`
+
+## 4) Create your environment file
+Copy `.env.example` to `.env` and change the secret.
+
+## 5) Run
+```bash
+python app.py
+```
+
+Then open:
+`http://localhost:5000`
+
+## Important
+This is an MVP, not a production-ready product. Before selling it:
+- Use HTTPS.
+- Store OAuth tokens securely in a database instead of cookie sessions.
+- Add user accounts.
+- Add explicit confirmation for ambiguous scheduling.
+- Add deletion/rescheduling.
+- Add rate limits and logging.
+- Add a real LLM for better intent extraction if desired.
+- Handle time zones carefully.
