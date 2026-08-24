@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ScheduleAI</title>
+<style>
+:root{
+  --bg:#0b1020;--panel:#121a31;--text:#f6f8ff;--muted:#9aa7c7;
+  --line:#243252;--a:#8fb0ff;--b:#8df0ff;--good:#7fe0b3;--bad:#ff9a9a
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial;background:
+radial-gradient(circle at 15% 0%,rgba(143,176,255,.18),transparent 35%),
+linear-gradient(180deg,#0b1020,#0a1123);color:var(--text);min-height:100vh}
+.wrap{max-width:860px;margin:auto;padding:24px}
+nav{display:flex;justify-content:space-between;align-items:center;padding:10px 0 40px}
+.brand{font-size:1.2rem;font-weight:900}.pill{font-size:.85rem;color:var(--muted)}
+.hero{text-align:center;padding:30px 0 35px}
+h1{font-size:clamp(2.5rem,7vw,5rem);line-height:1;margin:0 0 18px}
+.hero p{color:var(--muted);font-size:1.1rem;max-width:650px;margin:0 auto}
+.card{background:rgba(18,26,49,.88);border:1px solid var(--line);border-radius:22px;padding:22px;box-shadow:0 24px 80px rgba(0,0,0,.25)}
+textarea{width:100%;min-height:125px;resize:vertical;background:#0a1123;color:var(--text);border:1px solid var(--line);border-radius:15px;padding:16px;font-size:1rem;outline:none}
+textarea:focus{border-color:var(--a)}
+.actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:14px}
+button,a.btn{border:none;border-radius:12px;padding:12px 17px;font-weight:800;cursor:pointer;text-decoration:none}
+.primary{background:linear-gradient(90deg,var(--b),var(--a));color:#07101f}
+.secondary{background:#1a2542;color:var(--text);border:1px solid var(--line)}
+.preview{margin-top:18px;padding:16px;border:1px solid var(--line);border-radius:14px;display:none}
+.row{display:flex;justify-content:space-between;gap:18px;padding:6px 0}
+.label{color:var(--muted)}
+.status{margin-top:14px;min-height:24px}
+.examples{margin-top:24px;color:var(--muted);font-size:.92rem}
+.examples span{display:inline-block;background:#111a31;border:1px solid var(--line);padding:7px 10px;border-radius:999px;margin:4px}
+footer{color:var(--muted);font-size:.85rem;padding:32px 0;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav>
+  <div class="brand">ScheduleAI</div>
+  <div>
+    {% if connected %}
+      <span class="pill">Google Calendar connected ✓</span>
+      <a class="btn secondary" href="/disconnect-google">Disconnect</a>
+    {% else %}
+      <a class="btn secondary" href="/connect-google">Connect Google Calendar</a>
+    {% endif %}
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>Tell AI. It schedules.</h1>
+  <p>Type what you want in plain English. ScheduleAI turns it into a calendar event and adds it to your Google Calendar.</p>
+</section>
+
+<div class="card">
+  <textarea id="prompt" placeholder="Example: Dentist tomorrow at 3pm for 1 hour"></textarea>
+  <div class="actions">
+    <button class="secondary" onclick="preview()">Preview</button>
+    <button class="primary" onclick="scheduleEvent()">Add to Calendar</button>
+  </div>
+
+  <div class="preview" id="preview">
+    <div class="row"><span class="label">Event</span><strong id="title">—</strong></div>
+    <div class="row"><span class="label">Starts</span><strong id="start">—</strong></div>
+    <div class="row"><span class="label">Ends</span><strong id="end">—</strong></div>
+  </div>
+  <div class="status" id="status"></div>
+
+  <div class="examples">
+    Try:
+    <span>Gym Friday at 5pm for 90 minutes</span>
+    <span>Call John tomorrow at 2pm for 30 minutes</span>
+    <span>Dentist August 30 at 3pm for 1 hour</span>
+  </div>
+</div>
+
+<footer>Starter MVP — add AI/LLM parsing, reminders, contacts, and multiple calendars later.</footer>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+function setStatus(msg, good=false){
+  $("status").textContent = msg;
+  $("status").style.color = good ? "var(--good)" : "var(--bad)";
+}
+function showEvent(e){
+  $("preview").style.display="block";
+  $("title").textContent=e.title;
+  $("start").textContent=new Date(e.start).toLocaleString();
+  $("end").textContent=new Date(e.end).toLocaleString();
+}
+async function preview(){
+  setStatus("");
+  const text=$("prompt").value.trim();
+  if(!text){setStatus("Type something first.");return}
+  const r=await fetch("/api/preview",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
+  const d=await r.json();
+  if(!d.ok){setStatus(d.error);return}
+  showEvent(d.event); setStatus("Looks good.",true);
+}
+async function scheduleEvent(){
+  setStatus("");
+  const text=$("prompt").value.trim();
+  if(!text){setStatus("Type something first.");return}
+  const r=await fetch("/api/schedule",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});
+  const d=await r.json();
+  if(!d.ok){setStatus(d.error);return}
+  showEvent(d.event);
+  setStatus("Added to Google Calendar ✓",true);
+  if(d.calendar_link){
+    const a=document.createElement("a");
+    a.href=d.calendar_link;a.target="_blank";a.textContent=" Open event";
+    a.style.color="var(--b)";$("status").appendChild(a);
+  }
+}
+</script>
+</body>
+</html>
